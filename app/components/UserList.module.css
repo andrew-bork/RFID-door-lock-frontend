@@ -1,0 +1,9 @@
+
+
+.cell-expired {
+    background-color: #ff000033;
+}
+
+.cell-valid {
+    background-color: #00ff0033;
+}

@@ -1,101 +1,195 @@
-import styles from '@/app/page.module.css'
-import type { Selectable, User } from '@/app/common/types';
-import { VscAdd } from "react-icons/vsc";
-import { useEffect, useRef, useState } from 'react';
-interface UserListComponentProps {
-    userList: Selectable<User>[],
-    setUserList: (newUserList:Selectable<User>[]) => void,
-    scopes: string[],
-    hoveredScope: string,
-}
+"use client"
+
+import styles from './UserList.module.css'
+import type { Selectable, User } from '@/app/common/types'; 
+import { useEffect, useRef, useState, useMemo } from 'react';
+
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+// import AddIcon from '@mui/icons-material/Add';
+// import EditIcon from '@mui/icons-material/Edit';
+// import DeleteIcon from '@mui/icons-material/DeleteOutlined';
+// import SaveIcon from '@mui/icons-material/Save';
+// import CancelIcon from '@mui/icons-material/Close';
+import { DataGrid, GridColDef, GridRowsProp, GridToolbarContainer } from "@mui/x-data-grid"
+
+
+import type { ResponseType as CreateUserResponseType } from "@/pages/api/create-user";
+import type { ResponseType as GetUsersResponseType } from "@/pages/api/get-users";
+import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField } from '@mui/material';
+
+
+
+function enumerateScopes(userList:User[]) : string[]{
+    const scopes : Set<string> = new Set();
   
-export function UserListComponent({ userList, setUserList, scopes, hoveredScope } : UserListComponentProps) {
-
-    const tableElements = userList.map((user, i) => {
-        return <tr key={user.item._id}>
-            <td className={styles["check-box-cell"]}>
-                {/* Checkbox */}
-                <input type="checkbox"
-                    checked={user.selected} 
-                    onChange={() => {
-                        const newUserList = userList.map((user, j) => {
-                            if(i ==j) return { selected: !user.selected, item: user.item };
-                            return user;
-                        });
-
-                        setUserList(newUserList);
-                    }}/>
-            </td>
-            <td>
-                {user.item.name}
-            </td>
-            {
-                scopes.map((scopeName, i) => {
-                    const scope = user.item.scopes.find((scope) => scope.scope === scopeName);
-                    if(scope == null)
-                        return <td key={i}> -- </td>
-
-                    const expirationDate = new Date(scope.expires_at);
-                    if(expirationDate.getFullYear() > 275750) {
-                        return <td key={i} className={styles["non-expired-cell"]}>Never</td>
-                    }
-
-                    if(expirationDate < new Date()) {
-                        return <td key={i} className={styles["expired-cell"]}>{expirationDate.toLocaleDateString()}</td>
-                    }
-
-                    return <td key={i} className={styles["non-expired-cell"]}>{expirationDate.toLocaleDateString()}</td>
-                })
-            }
-            <td></td>
-        </tr>
+    userList.forEach((user) => {
+        user.scopes.forEach((scope) => {
+            scopes.add(scope.scope);
+        });
     });
   
-    const allSelected = !userList.some((user) => !user.selected);
+    return Array.from(scopes);
+}
 
-    return <table className={styles["user-list"]}>
-        <thead>
-            <tr>
-                <td className={styles["check-box-cell"]}><input 
-                    type="checkbox" 
-                    checked={allSelected} 
-                    onChange={()=> {
-                        setUserList(userList.map((user) => {
-                            return {
-                                selected: !allSelected,
-                                item: user.item,
-                            };
-                        }));
-                    }}
 
-                /></td>
-                <td className={styles["name-cell"]}>Name</td>
-                {
-                    scopes.map((scope, i) => {
-                        return <td key={i} className={styles["name-cell"]}>{scope}</td>
-                    })
+interface UserListComponentProps {
+}
+
+  
+export function UserListComponent({} : UserListComponentProps) {
+
+
+    
+  
+    const [ userList, setUserList ] = useState<User[]>([]);
+    const [ scopes, setScopes ] = useState<string[]>([]);
+
+
+    const refresh = () => {
+        fetch("/api/get-users", { method: "GET" })
+        .then((response) => response.json())
+        .then((response : GetUsersResponseType) => {
+          if(response.success) {
+            setUserList(response.users);
+            console.log(response);
+            const scopes = enumerateScopes(response.users);
+            
+            setScopes(scopes);
+  
+          }else {
+            console.error(response.message);
+          }
+        })
+        .catch((error) => console.log(error));
+    };
+
+    useEffect(() => {
+
+        refresh();
+    
+        return () => {};
+      }, []);
+
+
+    
+      function UserListEditBar() {
+
+        const [ addingUser, setAddingUser ] = useState(false);
+    
+        const [ name, setName ] = useState("");
+    
+        function addUser() {
+            // console.log(`/api/create-user?name=${name}`);
+            fetch(`/api/create-user?name=${name}`)
+                .then(res => res.json())
+                .then((res : CreateUserResponseType) => {
+                    if(res.success) {
+                        refresh();
+                    }
+                });
+        }
+    
+        return <GridToolbarContainer>
+            <Button color="primary" onClick={()=>{refresh();}}>
+                Refresh
+            </Button>
+            <Button color="primary" onClick={()=>{setAddingUser(true);}}>
+                Add user
+            </Button>
+    
+            <Dialog open={addingUser} onClose={()=>{setAddingUser(false);}}>
+                <DialogTitle>Add a user</DialogTitle>
+                <DialogContent>
+                    <TextField value={name} onChange={(e) => {setName(e.target.value);}} autoFocus margin="dense" id="name" label="Name" type="text" fullWidth variant="standard"/>    
+                </DialogContent>
+                
+                <DialogActions>
+                    <Button onClick={()=>{setAddingUser(false);}}>Cancel</Button>
+                    <Button onClick={()=>{setAddingUser(false);addUser();}}>Add</Button>
+                </DialogActions>
+            </Dialog>
+    
+        </GridToolbarContainer>
+    }
+
+
+    const rows: GridRowsProp = useMemo(() => {
+        return userList.map((user) => {
+            const row : {[x: string]: string|number|Date|null}= {
+                id: user._id,
+                name: user.name
+            };
+    
+            scopes.forEach((scope) => {
+                const userScope = user.scopes.find((userScope) => userScope.scope === scope);
+                if(userScope == null) {
+                    row[scope] = null;
+                }else {
+                    row[scope] = new Date(userScope.expires_at);
                 }
-                <td>
-                </td>
-            </tr>
-            </thead>
-        <tbody>
-            {tableElements}
-        </tbody>
+            });
+    
+            return row;
+        });
+    }, [userList, scopes])
+    
 
-        <colgroup>
-            <col/>
-            <col/>
-            {
-                scopes.map((scope, i) => {
-                    let className = "";
-                    if(scope == hoveredScope) className = styles["hovered-scope-col"];
-                    return <col key={i} className={className}></col>
-                })
-            }
-            <col/>
-        </colgroup>
-    </table>;
+    const cols: GridColDef[] = useMemo(() => {
+        const cols : GridColDef[] = [{ 
+                field: "name", 
+                width: 250,
+                renderHeader() {
+                    return <strong>Name</strong>
+                }
+            }];
+
+        scopes.forEach((scope) => {
+            cols.push({ 
+                field: scope,  
+                width: 200,
+                renderHeader() {
+                    return <strong>{scope}</strong>
+                },
+                cellClassName(props) {
+                    if(props.value == null) return "";
+                    const expirationDate = props.value as Date;
+                    const now = new Date();
+                    if(expirationDate < now) {
+                        return styles["cell-expired"];
+                    }else {
+                        return styles["cell-valid"];
+                    }
+                },
+                renderCell(props) {
+                    if(props.value == null) return <>--</>
+                    const expirationDate = props.value as Date;
+                    const never = new Date(8640000000000000);
+                    if(never <= expirationDate) return <>Never</>
+                    return <>{expirationDate.toLocaleDateString()}</>
+                }
+            });
+        });
+
+        return cols;
+    }, [scopes]);
+
+    return <Box
+        sx={{
+            width: '90%',
+            '& .actions': {
+              color: 'text.secondary',
+            },
+            '& .textPrimary': {
+              color: 'text.primary',
+            },
+          }}>
+          <DataGrid 
+              slots={{
+                  toolbar: UserListEditBar
+              }}    
+              checkboxSelection rows={rows} columns={cols}/>
+        </Box>
 }
   
   
