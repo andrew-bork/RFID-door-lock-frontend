@@ -67,7 +67,7 @@
 }
 
 
-.user-list tr:hover {
+.user-list tbody tr:hover {
   background-color: #00000017;
 }
 
@@ -103,4 +103,13 @@
 
 .expired-cell {
   background-color: #ff00004a;
+}
+
+.scope-add-button {
+  width: min-content;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.scope-add-button:hover {
+  color: #000000aa;
 }

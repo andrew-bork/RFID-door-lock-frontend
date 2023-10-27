@@ -21,58 +21,22 @@ function enumerateScopes(userList:User[]) : string[]{
   return Array.from(scopes);
 }
 
+interface AddScopeComponent {
 
-function ScopeList({ scopes, setScopes, setHoveredScope }: { scopes: Selectable<string>[], setScopes: (newScopes:Selectable<string>[]) => void, setHoveredScope: (newHoveredScope:string) => void}) {
+};
 
-  const allSelected = !scopes.some((scope) => !scope.selected);
-
-  return <table className={styles["scope-list"]}>
-    <thead>
-      <tr>
-        <td>
-          <input type="checkbox" 
-            checked={allSelected}
-            onChange={() => {
-              setScopes(scopes.map((scope) => {
-                return {
-                  selected: !allSelected,
-                  item: scope.item,
-                };
-            }));
-          }}/>
-        </td>
-        <td>Scopes</td>
-      </tr>
-    </thead>
-    <tbody onMouseLeave={() => {setHoveredScope("");}}>
-      {scopes.map((scope, i) => {
-        return <tr key={i} onMouseEnter={() => {setHoveredScope(scope.item);}}>
-          <td>
-            <input type="checkbox" 
-              checked={scope.selected} 
-              onChange={() => {
-                const newScopes = scopes.map((scope, j) => {
-                  if(i ==j) return { selected: !scope.selected, item: scope.item };
-                  return scope;
-                });
-
-                setScopes(newScopes);
-              }}
-            />
-          </td>
-          <td>{scope.item}</td>
-        </tr>
-      })}
-    </tbody>
-  </table>
+function AddScopeComponent({} : AddScopeComponent) {
+  return <div>
+      <input className={styles["scope-text-input"]} placeholder="Scopes"/>
+      <input type="date"/>
+      <button>Add scope</button>
+    </div>
 }
-
-
 
 export default function Home() {
   
   const [ userList, setUserList ] = useState<Selectable<User>[]>([]);
-  const [ scopes, setScopes ] = useState<Selectable<string>[]>([]);
+  const [ scopes, setScopes ] = useState<string[]>([]);
 
   const [ hoveredScope, setHoveredScope ] = useState<string>("");
 
@@ -89,10 +53,7 @@ export default function Home() {
 
           const scopes = enumerateScopes(response.users);
           
-          setScopes(scopes.map((scope) => ({
-            selected: true,
-            item: scope,
-          })));
+          setScopes(scopes);
 
         }else {
           console.error(response.message);
@@ -108,9 +69,7 @@ export default function Home() {
       <div className={styles.description}>
 
         <h1>RFID Door Lock Control Panel</h1>
-        <ScopeList scopes={scopes} setScopes={setScopes} setHoveredScope={setHoveredScope}/>
-        <input className={styles["scope-text-input"]} placeholder="Scopes"/>
-        <button>Add scope</button>
+        <AddScopeComponent/>
         <UserListComponent userList={userList} setUserList={setUserList} scopes={scopes} hoveredScope={hoveredScope}/>
       </div>
     </main>

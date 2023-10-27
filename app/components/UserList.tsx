@@ -1,16 +1,15 @@
 import styles from '@/app/page.module.css'
 import type { Selectable, User } from '@/app/common/types';
-
+import { VscAdd } from "react-icons/vsc";
+import { useEffect, useRef, useState } from 'react';
 interface UserListComponentProps {
     userList: Selectable<User>[],
     setUserList: (newUserList:Selectable<User>[]) => void,
-    scopes: Selectable<string>[],
+    scopes: string[],
     hoveredScope: string,
 }
   
 export function UserListComponent({ userList, setUserList, scopes, hoveredScope } : UserListComponentProps) {
-
-
 
     const tableElements = userList.map((user, i) => {
         return <tr key={user.item._id}>
@@ -31,8 +30,8 @@ export function UserListComponent({ userList, setUserList, scopes, hoveredScope 
                 {user.item.name}
             </td>
             {
-                scopes.filter((scope) => scope.selected).map((scopeName, i) => {
-                    const scope = user.item.scopes.find((scope) => scope.scope === scopeName.item);
+                scopes.map((scopeName, i) => {
+                    const scope = user.item.scopes.find((scope) => scope.scope === scopeName);
                     if(scope == null)
                         return <td key={i}> -- </td>
 
@@ -72,11 +71,12 @@ export function UserListComponent({ userList, setUserList, scopes, hoveredScope 
                 /></td>
                 <td className={styles["name-cell"]}>Name</td>
                 {
-                    scopes.filter((scope) => scope.selected).map((scope, i) => {
-                        return <td key={i} className={styles["name-cell"]}>{scope.item}</td>
+                    scopes.map((scope, i) => {
+                        return <td key={i} className={styles["name-cell"]}>{scope}</td>
                     })
                 }
-                <td></td>
+                <td>
+                </td>
             </tr>
             </thead>
         <tbody>
@@ -87,9 +87,9 @@ export function UserListComponent({ userList, setUserList, scopes, hoveredScope 
             <col/>
             <col/>
             {
-                scopes.filter((scope) => scope.selected).map((scope, i) => {
+                scopes.map((scope, i) => {
                     let className = "";
-                    if(scope.item == hoveredScope) className = styles["hovered-scope-col"];
+                    if(scope == hoveredScope) className = styles["hovered-scope-col"];
                     return <col key={i} className={className}></col>
                 })
             }
