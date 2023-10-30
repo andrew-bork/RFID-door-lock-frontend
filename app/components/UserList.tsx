@@ -11,14 +11,16 @@ import Button from '@mui/material/Button';
 // import DeleteIcon from '@mui/icons-material/DeleteOutlined';
 // import SaveIcon from '@mui/icons-material/Save';
 // import CancelIcon from '@mui/icons-material/Close';
-import { DataGrid, GridColDef, GridRowSelectionModel, GridRowsProp, GridToolbarContainer } from "@mui/x-data-grid"
+import { DataGrid, GridColDef, GridRowModes, GridRowModesModel, GridRowSelectionModel, GridRowsProp, GridToolbarContainer, useGridApiContext } from "@mui/x-data-grid"
 
 
 import type { ResponseType as CreateUserResponseType } from "@/pages/api/create-user";
 import type { ResponseType as GetUsersResponseType } from "@/pages/api/get-users";
 import type { ResponseType as DeleteUsersResponseType } from "@/pages/api/delete-users";
+import type { ResponseType as RemoveScopeResponseType  } from '@/pages/api/remove-scope';
+import type { ResponseType as AddScopeResponseType  } from '@/pages/api/add-scope';
 
-import { Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormGroup, InputLabel, TextField, ButtonGroup } from '@mui/material';
+import { Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormGroup, InputLabel, TextField, ButtonGroup, Grid, Typography, Popper, Input } from '@mui/material';
 import { validateName, validateScope } from '../common/validate';
 import { Delete, Edit } from '@mui/icons-material';
 
@@ -44,8 +46,12 @@ interface UserListComponentProps {
 export function UserListComponent({} : UserListComponentProps) {
 
 
-    
+    const [ rowModesModel, setRowModesModel ] = useState<GridRowModesModel>({});
     const [ rowSelectionModel, setRowSelectionModel ] = useState<GridRowSelectionModel>([]);
+    const [ selectingDate, setSelectingDate ] = useState(false);
+    const [ selectedDate, setSelectedDate ] = useState(new Date());
+    const [ cellBeingEdited, setCellBeingEdited ] = useState({ id: "", scope: ""});
+
     const [ userList, setUserList ] = useState<User[]>([]);
     const [ scopes, setScopes ] = useState<string[]>([]);
 
@@ -193,6 +199,19 @@ export function UserListComponent({} : UserListComponentProps) {
     }, [userList, scopes])
     
 
+    
+    function addScope() {
+        // console.log("add scope");
+        fetch(`/api/add-scope?id=${cellBeingEdited.id}&scope=${cellBeingEdited.scope}&expires_at=${selectedDate.getTime()}`)
+            .then(res => res.json())
+            .then((res : AddScopeResponseType) => {
+                console.log(res);
+                if(res.success) {
+                    refresh();
+                }
+            });
+    }
+
     const cols: GridColDef[] = useMemo(() => {
         const cols : GridColDef[] = [{ 
             field: "name", 
@@ -200,14 +219,16 @@ export function UserListComponent({} : UserListComponentProps) {
             renderHeader() {
                 return <strong>Name</strong>
             }
-        },{ 
-            field: "id", 
-            width: 550,
-            hideable: true,
-            renderHeader() {
-                return <strong>Id</strong>
-            }
-        }];
+        },
+        // { 
+        //     field: "id", 
+        //     width: 550,
+        //     hideable: true,
+        //     renderHeader() {
+        //         return <strong>Id</strong>
+        //     }
+        // }
+    ];
 
         scopes.forEach((scope) => {
             cols.push({ 
@@ -228,28 +249,57 @@ export function UserListComponent({} : UserListComponentProps) {
                 },
                 renderCell(props) {
                     if(props.value == null) {
-                        return <>--<Button><Edit></Edit></Button> </>
+                        return <>--</>
                     }
                     const expirationDate = props.value as Date;
                     const never = new Date(8640000000000000);
                     if(never <= expirationDate) {
                         return <>
                             Never
-                            <Button><Delete></Delete></Button>
-                            <Button><Edit></Edit></Button> 
                         </>
                         }
                     return <>
                         {expirationDate.toLocaleDateString()}
-                        <Button><Delete></Delete></Button>
-                        <Button><Edit></Edit></Button> 
                     </>
-                }
+                },
+                renderEditCell: (props) => {
+                    
+                    // const gridApiRef = useGridApiContext();
+
+                    function removeScope() {
+                        console.log(`/api/remove-scope?id=${props.id}&scope=${scope}`);
+                        fetch(`/api/remove-scope?id=${props.id}&scope=${scope}`, { method: "POST" })
+                            .then(res => res.json())
+                            .then((res : RemoveScopeResponseType) => {
+                                console.log(res);
+                                setRowModesModel({ ...rowModesModel, [props.id]: { mode: GridRowModes.View } })
+                                // gridApiRef.current.stopCellEditMode({id: props.id, field: scope, ignoreModifications: false});
+                                if(res.success) {
+                                    refresh();
+                                }
+                            });
+                    }
+
+                    if(props.value != null) {
+                        const expirationDate = props.value as Date;
+                        return <Box margin="auto">
+                            <ButtonGroup>
+                                <Button color="error" variant="outlined" onClick={() => {removeScope();}}><Delete></Delete></Button>
+                                <Button onClick={() => {setSelectingDate(true);setCellBeingEdited({ id: props.id as string, scope: scope})}}><Edit></Edit></Button> 
+                            </ButtonGroup>
+                        </Box>
+                    }else {
+                        return <Box margin="auto">
+                                <Button onClick={() => {setSelectingDate(true);setCellBeingEdited({ id: props.id as string, scope: scope})}}><Edit></Edit></Button> 
+                        </Box>
+                    }
+                },
+                editable: true
             });
         });
 
         return cols;
-    }, [scopes]);
+    }, [scopes, rowModesModel]);
 
     return <Box
         sx={{
@@ -265,11 +315,22 @@ export function UserListComponent({} : UserListComponentProps) {
               slots={{
                   toolbar: UserListEditBar
               }}
+              onRowModesModelChange={setRowModesModel}
               onRowSelectionModelChange={(newRowSelectionModel) => {
                 setRowSelectionModel(newRowSelectionModel);
               }}
               rowSelectionModel={rowSelectionModel}
               checkboxSelection rows={rows} columns={cols}/>
+        <Dialog open={selectingDate} onClose={() => {setSelectingDate(false);}}>
+                                    <DialogTitle>Add a scope:</DialogTitle>
+                                    <DialogContent>
+                                        <Input title="Expiration Date" type="date" onChange={(e) => {setSelectedDate(new Date(e.target.valueAsNumber));}}/>
+                                    </DialogContent>
+                                    <DialogActions>
+                                        <Button onClick={() => {setSelectingDate(false);}}>Cancel</Button>
+                                        <Button onClick={() => {setSelectingDate(false);addScope()}}>Add scope</Button>
+                                    </DialogActions>
+                                </Dialog>
         </Box>
 }
   
