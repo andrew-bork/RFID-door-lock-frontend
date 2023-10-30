@@ -18,8 +18,9 @@ import type { ResponseType as CreateUserResponseType } from "@/pages/api/create-
 import type { ResponseType as GetUsersResponseType } from "@/pages/api/get-users";
 import type { ResponseType as DeleteUsersResponseType } from "@/pages/api/delete-users";
 
-import { Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormGroup, InputLabel, TextField } from '@mui/material';
+import { Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormGroup, InputLabel, TextField, ButtonGroup } from '@mui/material';
 import { validateName, validateScope } from '../common/validate';
+import { Delete, Edit } from '@mui/icons-material';
 
 
 
@@ -226,11 +227,23 @@ export function UserListComponent({} : UserListComponentProps) {
                     }
                 },
                 renderCell(props) {
-                    if(props.value == null) return <>--</>
+                    if(props.value == null) {
+                        return <>--<Button><Edit></Edit></Button> </>
+                    }
                     const expirationDate = props.value as Date;
                     const never = new Date(8640000000000000);
-                    if(never <= expirationDate) return <>Never</>
-                    return <>{expirationDate.toLocaleDateString()}</>
+                    if(never <= expirationDate) {
+                        return <>
+                            Never
+                            <Button><Delete></Delete></Button>
+                            <Button><Edit></Edit></Button> 
+                        </>
+                        }
+                    return <>
+                        {expirationDate.toLocaleDateString()}
+                        <Button><Delete></Delete></Button>
+                        <Button><Edit></Edit></Button> 
+                    </>
                 }
             });
         });
