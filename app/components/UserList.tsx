@@ -16,7 +16,10 @@ import { DataGrid, GridColDef, GridRowSelectionModel, GridRowsProp, GridToolbarC
 
 import type { ResponseType as CreateUserResponseType } from "@/pages/api/create-user";
 import type { ResponseType as GetUsersResponseType } from "@/pages/api/get-users";
-import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField } from '@mui/material';
+import type { ResponseType as DeleteUsersResponseType } from "@/pages/api/delete-users";
+
+import { Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormGroup, InputLabel, TextField } from '@mui/material';
+import { validateName, validateScope } from '../common/validate';
 
 
 
@@ -77,14 +80,17 @@ export function UserListComponent({} : UserListComponentProps) {
 
         const [ addingUser, setAddingUser ] = useState(false);
         const [ deletingUsers, setDeletingUsers ] = useState(false);
+        const [ creatingScope, setCreatingScope ] = useState(false);
     
         const [ name, setName ] = useState("");
+        const [ scope, setScope ] = useState("");
     
         function addUser() {
             // console.log(`/api/create-user?name=${name}`);
             fetch(`/api/create-user?name=${name}`)
                 .then(res => res.json())
                 .then((res : CreateUserResponseType) => {
+                    console.log(res);
                     if(res.success) {
                         refresh();
                     }
@@ -92,29 +98,50 @@ export function UserListComponent({} : UserListComponentProps) {
         }
 
         function deleteUsers() {
+            fetch(`/api/delete-users?ids=${rowSelectionModel.join("+")}`, { method: "POST" })
+                .then(res => res.json())
+                .then((res : DeleteUsersResponseType) => {
+                    console.log(res);
+                    if(res.success) {
+                        refresh();
+                    }
+                });
 
+        }
+
+        function createScope() {
+            const newScopes = scopes.concat([scope]);
+            setScopes(newScopes);
         }
     
         return <GridToolbarContainer>
+            {/* <Button disabled>
+                View options
+            </Button> */}
             <Button color="primary" onClick={()=>{refresh();}}>
                 Refresh
             </Button>
             <Button color="primary" onClick={()=>{setAddingUser(true);}}>
                 Add user
             </Button>
-            <Button color="primary" onClick={() => {setDeletingUsers(true);}}>
-                Delete {rowSelectionModel.length} users
+            
+            <Button color="primary" onClick={() => {setDeletingUsers(true);}} disabled={rowSelectionModel.length == 0}>
+                Delete {rowSelectionModel.length} {(rowSelectionModel.length == 1) ? "user" : "users"}
+            </Button>
+
+            <Button color="primary" onClick={() => {setCreatingScope(true);}}>
+                Create scope
             </Button>
     
             <Dialog open={addingUser} onClose={()=>{setAddingUser(false);}}>
                 <DialogTitle>Add a user</DialogTitle>
                 <DialogContent>
-                    <TextField value={name} onChange={(e) => {setName(e.target.value);}} autoFocus margin="dense" id="name" label="Name" type="text" fullWidth variant="standard"/>    
+                    <TextField error={!validateName(name)} value={name} onChange={(e) => {setName(e.target.value);}} autoFocus margin="dense" id="name" label="Name" type="text" fullWidth variant="standard"/>    
                 </DialogContent>
                 
                 <DialogActions>
                     <Button onClick={()=>{setAddingUser(false);}}>Cancel</Button>
-                    <Button onClick={()=>{setAddingUser(false);deleteUsers();}}>Add</Button>
+                    <Button onClick={()=>{setAddingUser(false);addUser();}}>Add</Button>
                 </DialogActions>
             </Dialog>
 
@@ -125,13 +152,24 @@ export function UserListComponent({} : UserListComponentProps) {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={()=>{setDeletingUsers(false);}}>Cancel</Button>
-                    <Button onClick={()=>{setDeletingUsers(false);addUser();}}>Confirm Delete</Button>
+                    <Button onClick={()=>{setDeletingUsers(false);deleteUsers();}}>Confirm Delete</Button>
+                </DialogActions>
+            </Dialog>
+
+            
+            <Dialog open={creatingScope} onClose={()=>setCreatingScope(false)}>
+                <DialogTitle>Create scope</DialogTitle>
+                <DialogContent>
+                    <TextField error={!validateScope(scope)} value={scope} onChange={(e) => {setScope(e.target.value);}} autoFocus margin="dense" id="scope name" label="Scope Name" type="text" fullWidth variant="standard"/>    
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={()=>{setCreatingScope(false);}}>Cancel</Button>
+                    <Button onClick={()=>{setCreatingScope(false);createScope();}}>Add</Button>
                 </DialogActions>
             </Dialog>
     
         </GridToolbarContainer>
     }
-
 
     const rows: GridRowsProp = useMemo(() => {
         return userList.map((user) => {
@@ -156,12 +194,19 @@ export function UserListComponent({} : UserListComponentProps) {
 
     const cols: GridColDef[] = useMemo(() => {
         const cols : GridColDef[] = [{ 
-                field: "name", 
-                width: 250,
-                renderHeader() {
-                    return <strong>Name</strong>
-                }
-            }];
+            field: "name", 
+            width: 250,
+            renderHeader() {
+                return <strong>Name</strong>
+            }
+        },{ 
+            field: "id", 
+            width: 550,
+            hideable: true,
+            renderHeader() {
+                return <strong>Id</strong>
+            }
+        }];
 
         scopes.forEach((scope) => {
             cols.push({ 
