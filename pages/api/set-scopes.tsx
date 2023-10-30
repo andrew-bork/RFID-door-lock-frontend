@@ -1,9 +1,9 @@
-import { DATABASE_URL } from '@/app/common/env';
 import { handleDatabaseError, handleInvalidRequest } from '@/app/common/error-handling';
 import { MongoClient } from 'mongodb'
 
-import type { User, UserWithDateObject } from '@/app/common/types';
+import type { User, UserCollection, UserWithDateObject } from '@/app/common/types';
 import type { NextApiRequest as Request, NextApiResponse as Response} from 'next'
+import { DATABASE_URL } from '@/app/common/server-env';
 
 
 
@@ -24,7 +24,7 @@ export default async function handler(
     const client = new MongoClient(DATABASE_URL);
     await (client.connect().catch((error) => handleDatabaseError(error, res)));
     
-    const users = client.db("rfid").collection("users");
+    const users = client.db("rfid").collection("users") as UserCollection;
 
     const userId = req.query.id;
     if(userId == null) {

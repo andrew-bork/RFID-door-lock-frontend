@@ -1,4 +1,4 @@
-import { DATABASE_URL, BYTES_PER_ID, MAX_NAME_LENGTH } from '@/app/common/env';
+import { BYTES_PER_ID } from '@/app/common/env';
 import { handleDatabaseError, handleInvalidRequest } from '@/app/common/error-handling';
 import { Collection, MongoClient } from 'mongodb'
 
@@ -7,6 +7,7 @@ import type { NextApiRequest as Request, NextApiResponse as Response} from 'next
 
 import crypto from "crypto";
 import { validateName } from '@/app/common/validate';
+import { DATABASE_URL } from '@/app/common/server-env';
 
 /**
  * Create and return a base64url encoded id with BYTES_PER_ID bytes

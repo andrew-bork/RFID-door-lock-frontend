@@ -1,9 +1,10 @@
-import { DATABASE_URL } from '@/app/common/env';
+
 import { handleDatabaseError } from '@/app/common/error-handling';
 import { MongoClient } from 'mongodb'
 
-import type { User, UserWithDateObject } from '@/app/common/types';
+import type { User, UserCollection, UserWithDateObject } from '@/app/common/types';
 import type { NextApiRequest as Request, NextApiResponse as Response} from 'next'
+import { DATABASE_URL } from '@/app/common/server-env';
 
 
 
@@ -26,25 +27,33 @@ export default async function handler(
   
   await (client.connect().catch((error) => handleDatabaseError(error, res)));
 
-  // Should be User[]. We should kernel panic if it isn't
-  const users : User[] = ((await client
-    .db("rfid")
-    .collection("users")
+  const usersCollection = client.db("rfid").collection("users") as UserCollection
+
+  
+  const result = (await usersCollection
     .find()
     .toArray()
-    .catch((error) => handleDatabaseError(error, res)) as unknown) as UserWithDateObject[]) // Typecasting to make typescript happy. Fundamentally does nothing. If users isn't isnt a User[], we should probably halt and catch fire.
-    .map((user) => {
-      return {
-        _id: user._id,
-        name: user.name,
-        scopes: user.scopes.map((scope) => {
-          return {
-            scope: scope.scope,
-            expires_at: scope.expires_at.toISOString()
-          };
-        })
-      }
-    });
+    .catch((error) => handleDatabaseError(error, res)));
+  
+  if(result == null) {
+    handleDatabaseError("What happened to the \"users\" collection?", res);
+    return;
+  }
+
+
+
+  const users = result.map((user) => {
+    return {
+      _id: user._id,
+      name: user.name,
+      scopes: user.scopes.map((scope) => {
+        return {
+          scope: scope.scope,
+          expires_at: scope.expires_at.toISOString()
+        };
+      })
+    }
+  });
   
   
   res.status(200).json({

@@ -1,3 +1,4 @@
+import { Collection } from "mongodb"
 
 export interface Scope {
     scope: string,
@@ -22,3 +23,5 @@ export interface Selectable<T> {
     selected: boolean,
     item: T
 };
+
+export type UserCollection = Collection<UserWithDateObject>
