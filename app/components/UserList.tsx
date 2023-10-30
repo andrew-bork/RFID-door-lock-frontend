@@ -11,7 +11,7 @@ import Button from '@mui/material/Button';
 // import DeleteIcon from '@mui/icons-material/DeleteOutlined';
 // import SaveIcon from '@mui/icons-material/Save';
 // import CancelIcon from '@mui/icons-material/Close';
-import { DataGrid, GridColDef, GridRowsProp, GridToolbarContainer } from "@mui/x-data-grid"
+import { DataGrid, GridColDef, GridRowSelectionModel, GridRowsProp, GridToolbarContainer } from "@mui/x-data-grid"
 
 
 import type { ResponseType as CreateUserResponseType } from "@/pages/api/create-user";
@@ -41,7 +41,7 @@ export function UserListComponent({} : UserListComponentProps) {
 
 
     
-  
+    const [ rowSelectionModel, setRowSelectionModel ] = useState<GridRowSelectionModel>([]);
     const [ userList, setUserList ] = useState<User[]>([]);
     const [ scopes, setScopes ] = useState<string[]>([]);
 
@@ -76,6 +76,7 @@ export function UserListComponent({} : UserListComponentProps) {
       function UserListEditBar() {
 
         const [ addingUser, setAddingUser ] = useState(false);
+        const [ deletingUsers, setDeletingUsers ] = useState(false);
     
         const [ name, setName ] = useState("");
     
@@ -89,6 +90,10 @@ export function UserListComponent({} : UserListComponentProps) {
                     }
                 });
         }
+
+        function deleteUsers() {
+
+        }
     
         return <GridToolbarContainer>
             <Button color="primary" onClick={()=>{refresh();}}>
@@ -96,6 +101,9 @@ export function UserListComponent({} : UserListComponentProps) {
             </Button>
             <Button color="primary" onClick={()=>{setAddingUser(true);}}>
                 Add user
+            </Button>
+            <Button color="primary" onClick={() => {setDeletingUsers(true);}}>
+                Delete {rowSelectionModel.length} users
             </Button>
     
             <Dialog open={addingUser} onClose={()=>{setAddingUser(false);}}>
@@ -106,7 +114,18 @@ export function UserListComponent({} : UserListComponentProps) {
                 
                 <DialogActions>
                     <Button onClick={()=>{setAddingUser(false);}}>Cancel</Button>
-                    <Button onClick={()=>{setAddingUser(false);addUser();}}>Add</Button>
+                    <Button onClick={()=>{setAddingUser(false);deleteUsers();}}>Add</Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog open={deletingUsers} onClose={()=>setDeletingUsers(false)}>
+                <DialogTitle>Confirm delete users</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>This action is irreversible.</DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={()=>{setDeletingUsers(false);}}>Cancel</Button>
+                    <Button onClick={()=>{setDeletingUsers(false);addUser();}}>Confirm Delete</Button>
                 </DialogActions>
             </Dialog>
     
@@ -187,7 +206,11 @@ export function UserListComponent({} : UserListComponentProps) {
           <DataGrid 
               slots={{
                   toolbar: UserListEditBar
-              }}    
+              }}
+              onRowSelectionModelChange={(newRowSelectionModel) => {
+                setRowSelectionModel(newRowSelectionModel);
+              }}
+              rowSelectionModel={rowSelectionModel}
               checkboxSelection rows={rows} columns={cols}/>
         </Box>
 }
