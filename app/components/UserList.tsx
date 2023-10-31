@@ -1,8 +1,8 @@
 "use client"
 
 import styles from './UserList.module.css'
-import type { Selectable, User } from '@/app/common/types'; 
-import { useEffect, useRef, useState, useMemo } from 'react';
+import type { Selectable, User } from '../common/types'; 
+import { useEffect, useRef, useState, useMemo, SyntheticEvent, ChangeEventHandler } from 'react';
 
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -324,7 +324,7 @@ export function UserListComponent({} : UserListComponentProps) {
         <Dialog open={selectingDate} onClose={() => {setSelectingDate(false);}}>
                                     <DialogTitle>Add a scope:</DialogTitle>
                                     <DialogContent>
-                                        <Input title="Expiration Date" type="date" onChange={(e) => {setSelectedDate(new Date(e.target.valueAsNumber));}}/>
+                                        <Input title="Expiration Date" type="date" onChange={(e) => {setSelectedDate(new Date((e.target as HTMLInputElement).valueAsNumber));}}/>
                                     </DialogContent>
                                     <DialogActions>
                                         <Button onClick={() => {setSelectingDate(false);}}>Cancel</Button>
