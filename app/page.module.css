@@ -1,115 +1,15 @@
+
 .main {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6rem;
-  min-height: 100vh;
-}
+  justify-content: center;
 
-.description h1 {
-  margin: 20px;
-}
-
-.description {
   width: 100%;
+  height: 100%;
 }
 
-
-
-.scope-list {
-  border-spacing: 0;
-  margin: 20px;
+.main>div>* {
+  margin: 30px;
 }
-
-
-.scope-list td{
-  padding: 10px 20px;
-  border-top: 1px solid rgba(0, 0, 0, 0.36);
-  margin: 0;
-  text-align: right;
-}
-
-
-.scope-list thead {
-  font-weight: bold;
-  background-color: #00000023;
-}
-
-
-.scope-list tr:hover {
-  background-color: #00000017;
-}
-
-.scope-list {
-  border: 2px solid rgba(0, 0, 0, 0.465);
-}
-
-
-.user-list {
-  border-spacing: 0;
-  width: 100%;
-  margin: 20px;
-}
-
-
-.user-list td{
-  padding: 10px 20px;
-  border-top: 1px solid rgba(0, 0, 0, 0.36);
-  margin: 0;
-  text-align: right;
-}
-
-
-.user-list thead {
-  font-weight: bold;
-  background-color: #00000023;
-}
-
-
-.user-list tbody tr:hover {
-  background-color: #00000017;
-}
-
-.user-list {
-  border: 2px solid rgba(0, 0, 0, 0.465);
-}
-
-.check-box-cell {
-  width: 30px;
-}
-
-.name-cell {
-  width: 200px;
-}
-
-.hovered-scope-col {
-  background-color: #00000017;
-}
-
-.scope-text-input {
-  padding: 5px;
-  font-size: 24px;
-  margin: 0px 20px;
-}
-
-.description button {
-  padding: 10px;
-}
-
-.non-expired-cell {
-  background-color: #04ff004a;
-}
-
-.expired-cell {
-  background-color: #ff00004a;
-}
-
-.scope-add-button {
-  width: min-content;
-  text-decoration: underline;
-  cursor: pointer;
-}
-.scope-add-button:hover {
-  color: #000000aa;
+.main>div {
+  width: 80%;
 }

@@ -1,3 +1,4 @@
+import { Collection } from "mongodb"
 
 export interface Scope {
     scope: string,
@@ -21,4 +22,33 @@ export interface User {
 export interface Selectable<T> {
     selected: boolean,
     item: T
+};
+
+export type UserCollection = Collection<UserWithDateObject>
+
+export type DatabaseLogEntry = DatabaseAuthLogEntry;
+
+export type DatabaseAuthLogEntry = {
+    _id: string,
+    log_type: "auth-log",
+    user_id: string,
+    requested_scope: string,
+    time: Date,
+    success: boolean,
+    reason?: string
+};
+
+
+
+export type LogEntry = AuthLogEntry;
+
+export type AuthLogEntry = {
+    _id: string,
+    log_type: "auth-log",
+    user_id: string,
+    user_name: string|null,
+    requested_scope: string,
+    time: number,
+    success: boolean,
+    reason?: string
 };
